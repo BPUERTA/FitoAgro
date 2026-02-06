@@ -48,24 +48,22 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white shadow-sm ring-1 ring-gray-200 rounded-xl p-6 space-y-4">
                 <div>
-                    <p class="text-xs uppercase text-gray-400">Cliente</p>
-                    <p class="text-sm text-gray-900">{{ $registroTecnico->client?->name ?? 'Pendiente' }}</p>
-                </div>
-                <div>
-                    <p class="text-xs uppercase text-gray-400">Explotación</p>
-                    <p class="text-sm text-gray-900">{{ $registroTecnico->farm?->name ?? 'Pendiente' }}</p>
-                </div>
-                @if($registroTecnico->farm?->clientGroup)
-                    <div>
-                        <p class="text-xs uppercase text-gray-400">Grupo de Clientes</p>
-                        <p class="text-sm text-gray-900">{{ $registroTecnico->farm->clientGroup->name }}</p>
+                    <p class="text-xs uppercase text-gray-400">Cliente/Grupo</p>
+                    <p class="text-sm text-gray-900">
+                        {{ $registroTecnico->farm?->clientGroup?->name ?? $registroTecnico->client?->name ?? 'Pendiente' }}
+                    </p>
+                    @if($registroTecnico->farm?->clientGroup)
                         <div class="mt-1 text-xs text-gray-600 space-y-0.5">
                             @foreach($registroTecnico->farm->clientGroup->members as $member)
                                 <div>{{ $member->client?->name ?? '—' }} ({{ number_format((float) $member->percentage, 2) }}%)</div>
                             @endforeach
                         </div>
-                    </div>
-                @endif
+                    @endif
+                </div>
+                <div>
+                    <p class="text-xs uppercase text-gray-400">Explotación</p>
+                    <p class="text-sm text-gray-900">{{ $registroTecnico->farm?->name ?? 'Pendiente' }}</p>
+                </div>
                 <div>
                     <p class="text-xs uppercase text-gray-400">Lote</p>
                     <p class="text-sm text-gray-900">{{ $registroTecnico->lot?->name ?? '—' }}</p>
