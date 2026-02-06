@@ -127,3 +127,20 @@
         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
     @enderror
 </div>
+<div>
+    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">
+        Estado
+    </label>
+    <select
+        id="status"
+        name="status"
+        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        required
+    >
+        <option value="active" {{ old('status', isset($client) ? $client->status : 'active') === 'active' ? 'selected' : '' }}>Activo</option>
+        <option value="inactive" {{ old('status', isset($client) ? $client->status : 'active') === 'inactive' ? 'selected' : '' }}>Inactivo</option>
+    </select>
+    @error('status')
+        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+    @enderror
+</div>
