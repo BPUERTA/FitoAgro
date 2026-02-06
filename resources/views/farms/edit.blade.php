@@ -22,34 +22,32 @@
                 <input type="hidden" name="lng" id="lng" value="{{ old('lng', $farm->lng) }}">
                 
                 <div>
-                    <label for="client_id" class="block text-sm font-medium text-gray-700">Cliente</label>
-                    <select id="client_id" name="client_id" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" onchange="updateFarmName()">
-                        <option value="">Seleccione un cliente</option>
-                        @foreach($clients as $client)
-                            <option value="{{ $client->id }}" 
-                                    data-client-name="{{ $client->name }}" 
-                                    {{ old('client_id', $farm->client_id) == $client->id ? 'selected' : '' }}>
-                                {{ $client->number }} - {{ $client->name }}
-                            </option>
-                        @endforeach
+                    <label for="client_selector" class="block text-sm font-medium text-gray-700">Cliente/Grupo</label>
+                    <select id="client_selector" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" onchange="updateFarmName()">
+                        <option value="">Seleccionar cliente o grupo</option>
+                        <optgroup label="Clientes">
+                            @foreach($clients as $client)
+                                @php($clientValue = 'client:' . $client->id)
+                                <option value="{{ $clientValue }}" data-client-name="{{ $client->name }}" {{ old('client_id', $farm->client_id) == $client->id && !old('client_group_id', $farm->client_group_id) ? 'selected' : '' }}>
+                                    {{ $client->number }} - {{ $client->name }}
+                                </option>
+                            @endforeach
+                        </optgroup>
+                        <optgroup label="Grupos">
+                            @foreach($clientGroups as $group)
+                                @php($groupValue = 'group:' . $group->id)
+                                <option value="{{ $groupValue }}" {{ old('client_group_id', $farm->client_group_id) == $group->id ? 'selected' : '' }}>
+                                    {{ $group->name }}
+                                </option>
+                            @endforeach
+                        </optgroup>
                     </select>
-                    <p class="mt-1 text-xs text-gray-500">Podés elegir un cliente o un grupo. Si elegís un grupo, se asigna automáticamente.</p>
+                    <input type="hidden" name="client_id" id="client_id" value="{{ old('client_id', $farm->client_id) }}">
+                    <input type="hidden" name="client_group_id" id="client_group_id" value="{{ old('client_group_id', $farm->client_group_id) }}">
+                    <p class="mt-1 text-xs text-gray-500">Elegí un cliente o un grupo. Si elegís un grupo, se asigna automáticamente.</p>
                     @error('client_id')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
-                </div>
-
-                <div>
-                    <label for="client_group_id" class="block text-sm font-medium text-gray-700">Grupo de clientes</label>
-                    <select id="client_group_id" name="client_group_id" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
-                        <option value="">Sin grupo</option>
-                        @foreach($clientGroups as $group)
-                            <option value="{{ $group->id }}" {{ old('client_group_id', $farm->client_group_id) == $group->id ? 'selected' : '' }}>
-                                {{ $group->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <p class="mt-1 text-xs text-gray-500">Si asignás un grupo, los porcentajes se usarán para esta explotación.</p>
                     @error('client_group_id')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -806,12 +804,14 @@
     }
 
     function updateFarmName() {
-        const clientSelect = document.getElementById('client_id');
+        const clientSelector = document.getElementById('client_selector');
         const nameInput = document.getElementById('name');
-        const selectedOption = clientSelect.options[clientSelect.selectedIndex];
+        if (!clientSelector) return;
+        const selectedOption = clientSelector.options[clientSelector.selectedIndex];
+        const selectedValue = selectedOption?.value || '';
         
         // Solo actualizar si hay un cliente seleccionado y el campo está vacío o no ha sido editado manualmente
-        if (selectedOption.value && selectedOption.dataset.clientName) {
+        if (selectedValue.startsWith('client:') && selectedOption.dataset.clientName) {
             const clientName = selectedOption.dataset.clientName;
             
             // Si el campo está vacío o tiene el valor de un cliente anterior, actualizarlo
@@ -839,24 +839,31 @@
         autoArea.checked = same;
     }
 
-    function toggleClientSelect() {
-        const groupSelect = document.getElementById('client_group_id');
-        const clientSelect = document.getElementById('client_id');
-        if (!groupSelect || !clientSelect) return;
-
-        if (groupSelect.value) {
-            clientSelect.value = '';
-            clientSelect.disabled = true;
-            clientSelect.classList.add('bg-gray-100', 'text-gray-500');
-        } else {
-            clientSelect.disabled = false;
-            clientSelect.classList.remove('bg-gray-100', 'text-gray-500');
-        }
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('client_group_id')?.addEventListener('change', toggleClientSelect);
-        toggleClientSelect();
+        const clientSelector = document.getElementById('client_selector');
+        const clientIdInput = document.getElementById('client_id');
+        const clientGroupInput = document.getElementById('client_group_id');
+
+        function applySelection() {
+            const value = clientSelector?.value || '';
+            if (value.startsWith('client:')) {
+                clientIdInput.value = value.replace('client:', '');
+                clientGroupInput.value = '';
+            } else if (value.startsWith('group:')) {
+                clientGroupInput.value = value.replace('group:', '');
+                clientIdInput.value = '';
+            } else {
+                clientIdInput.value = '';
+                clientGroupInput.value = '';
+            }
+        }
+
+        clientSelector?.addEventListener('change', () => {
+            applySelection();
+            updateFarmName();
+        });
+        applySelection();
+        updateFarmName();
 
         document.getElementById('map-instructions-btn')?.addEventListener('click', () => {
             document.getElementById('map-instructions-modal')?.classList.remove('hidden');
