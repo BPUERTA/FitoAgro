@@ -8,7 +8,7 @@
         @csrf
         <div>
             <label for="client_selector_input" class="block text-sm font-medium text-gray-700">Cliente/Grupo</label>
-            <input type="text" id="client_selector_input" list="client_selector_list" placeholder="Escribir para buscar" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" autocomplete="off">
+            <input type="text" id="client_selector_input" name="client_selector_input" list="client_selector_list" placeholder="Escribir para buscar" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" autocomplete="off">
             <datalist id="client_selector_list">
                 @foreach($clients as $client)
                     <option value="Cliente: {{ $client->number }} - {{ $client->name }}"></option>

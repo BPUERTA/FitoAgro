@@ -50,6 +50,7 @@ class FarmController extends Controller
         $data = $request->validate([
             'client_id' => ['nullable', 'exists:clients,id'],
             'client_group_id' => ['nullable', 'exists:client_groups,id'],
+            'client_selector_input' => ['nullable', 'string'],
             'name' => ['required', 'string', 'max:255'],
             'has' => ['required', 'numeric', 'min:0'],
             'distancia_poblado' => ['nullable', 'numeric', 'min:0'],
@@ -58,6 +59,41 @@ class FarmController extends Controller
             'alert_ndmi' => ['nullable', 'boolean'],
             'alert_nbr' => ['nullable', 'boolean'],
         ]);
+
+        if (empty($data['client_id']) && empty($data['client_group_id']) && !empty($data['client_selector_input'])) {
+            $selectorValue = trim($data['client_selector_input']);
+            $organizationId = $user->is_admin ? null : $user->organization_id;
+            if (str_starts_with(mb_strtolower($selectorValue), 'cliente:')) {
+                $raw = trim(mb_substr($selectorValue, 8));
+                $parts = array_map('trim', explode('-', $raw, 2));
+                $number = $parts[0] ?? null;
+                $name = $parts[1] ?? null;
+                $query = \App\Models\Client::query();
+                if ($organizationId) {
+                    $query->where('organization_id', $organizationId);
+                }
+                if ($number && is_numeric($number)) {
+                    $query->where('number', $number);
+                }
+                if ($name) {
+                    $query->where('name', $name);
+                }
+                $client = $query->first();
+                if ($client) {
+                    $data['client_id'] = $client->id;
+                }
+            } elseif (str_starts_with(mb_strtolower($selectorValue), 'grupo:')) {
+                $raw = trim(mb_substr($selectorValue, 6));
+                $query = \App\Models\ClientGroup::query();
+                if ($organizationId) {
+                    $query->where('organization_id', $organizationId);
+                }
+                $group = $query->where('name', $raw)->first();
+                if ($group) {
+                    $data['client_group_id'] = $group->id;
+                }
+            }
+        }
 
         if (empty($data['client_id']) && empty($data['client_group_id'])) {
             return back()->withErrors([
@@ -179,6 +215,7 @@ class FarmController extends Controller
         $data = $request->validate([
             'client_id' => ['nullable', 'exists:clients,id'],
             'client_group_id' => ['nullable', 'exists:client_groups,id'],
+            'client_selector_input' => ['nullable', 'string'],
             'name' => ['required', 'string', 'max:255'],
             'has' => ['required', 'numeric', 'min:0'],
             'distancia_poblado' => ['nullable', 'numeric', 'min:0'],
@@ -190,6 +227,41 @@ class FarmController extends Controller
             'alert_ndmi' => ['nullable', 'boolean'],
             'alert_nbr' => ['nullable', 'boolean'],
         ]);
+
+        if (empty($data['client_id']) && empty($data['client_group_id']) && !empty($data['client_selector_input'])) {
+            $selectorValue = trim($data['client_selector_input']);
+            $organizationId = $user->is_admin ? null : $user->organization_id;
+            if (str_starts_with(mb_strtolower($selectorValue), 'cliente:')) {
+                $raw = trim(mb_substr($selectorValue, 8));
+                $parts = array_map('trim', explode('-', $raw, 2));
+                $number = $parts[0] ?? null;
+                $name = $parts[1] ?? null;
+                $query = \App\Models\Client::query();
+                if ($organizationId) {
+                    $query->where('organization_id', $organizationId);
+                }
+                if ($number && is_numeric($number)) {
+                    $query->where('number', $number);
+                }
+                if ($name) {
+                    $query->where('name', $name);
+                }
+                $client = $query->first();
+                if ($client) {
+                    $data['client_id'] = $client->id;
+                }
+            } elseif (str_starts_with(mb_strtolower($selectorValue), 'grupo:')) {
+                $raw = trim(mb_substr($selectorValue, 6));
+                $query = \App\Models\ClientGroup::query();
+                if ($organizationId) {
+                    $query->where('organization_id', $organizationId);
+                }
+                $group = $query->where('name', $raw)->first();
+                if ($group) {
+                    $data['client_group_id'] = $group->id;
+                }
+            }
+        }
 
         if (empty($data['client_id']) && empty($data['client_group_id'])) {
             return back()->withErrors([
