@@ -26,9 +26,13 @@
                             </option>
                         @endforeach
                     </select>
-                    <div class="flex items-center gap-2 md:w-44">
+                    <div class="flex items-center gap-2 md:w-64">
                         <input type="number" step="0.01" min="0" max="100" name="members[{{ $index }}][percentage]" value="{{ $member['percentage'] ?? '' }}" placeholder="%" class="w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 text-right">
                         <span class="text-sm text-gray-500">%</span>
+                        <label class="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap">
+                            <input type="checkbox" class="fixed-toggle rounded border-gray-300 text-green-600 focus:ring-green-500">
+                            Fijar
+                        </label>
                         <button type="button" class="remove-member rounded bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100 whitespace-nowrap">Quitar</button>
                     </div>
                 </div>
@@ -59,19 +63,90 @@
                 <select name="members[${i}][client_id]" class="w-full md:flex-1 min-w-0 rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
                     ${optionsHtml}
                 </select>
-                <div class="flex items-center gap-2 md:w-44">
+                <div class="flex items-center gap-2 md:w-64">
                     <input type="number" step="0.01" min="0" max="100" name="members[${i}][percentage]" placeholder="%" class="w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 text-right">
                     <span class="text-sm text-gray-500">%</span>
+                    <label class="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap">
+                        <input type="checkbox" class="fixed-toggle rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        Fijar
+                    </label>
                     <button type="button" class="remove-member rounded bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100 whitespace-nowrap">Quitar</button>
                 </div>
             `;
             return row;
         }
 
+        function parsePercentage(value) {
+            const num = parseFloat(String(value).replace(',', '.'));
+            return Number.isFinite(num) ? Math.max(0, Math.min(100, num)) : 0;
+        }
+
+        function formatPercentage(value) {
+            const rounded = Math.round(value * 100) / 100;
+            return rounded.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+        }
+
+        function getRows() {
+            return list ? Array.from(list.querySelectorAll('.member-row')) : [];
+        }
+
+        function distributePercentages() {
+            const rows = getRows();
+            if (!rows.length) return;
+
+            let fixedTotal = 0;
+            const unfixed = [];
+
+            rows.forEach((row) => {
+                const fixed = row.querySelector('.fixed-toggle');
+                const input = row.querySelector('input[name$="[percentage]"]');
+                const value = parsePercentage(input?.value);
+
+                if (fixed?.checked) {
+                    fixedTotal += value;
+                } else {
+                    unfixed.push({ input });
+                }
+            });
+
+            const remaining = Math.max(0, 100 - fixedTotal);
+            if (!unfixed.length) return;
+
+            const baseShare = remaining / unfixed.length;
+            let allocated = 0;
+
+            unfixed.forEach(({ input }, idx) => {
+                if (!input) return;
+                let value = baseShare;
+                if (idx === unfixed.length - 1) {
+                    value = remaining - allocated;
+                } else {
+                    allocated += baseShare;
+                }
+                input.value = formatPercentage(value);
+            });
+        }
+
+        function initializeDefaults() {
+            if (!list) return;
+            const rows = getRows();
+            if (!rows.length) return;
+
+            const hasAnyValue = rows.some((row) => {
+                const input = row.querySelector('input[name$="[percentage]"]');
+                return input && String(input.value).trim() !== '';
+            });
+
+            if (!hasAnyValue) {
+                distributePercentages();
+            }
+        }
+
         addBtn?.addEventListener('click', () => {
             if (!list) return;
             list.appendChild(buildRow(index));
             index += 1;
+            distributePercentages();
         });
 
         if (list && list.querySelectorAll('.member-row').length === 0) {
@@ -83,6 +158,28 @@
             const btn = e.target.closest('.remove-member');
             if (!btn) return;
             btn.closest('.member-row')?.remove();
+            distributePercentages();
         });
+
+        list?.addEventListener('input', (e) => {
+            const input = e.target.closest('input[name$="[percentage]"]');
+            if (!input) return;
+            const row = input.closest('.member-row');
+            const fixed = row?.querySelector('.fixed-toggle');
+            if (fixed && !fixed.checked) {
+                fixed.checked = true;
+            }
+            distributePercentages();
+        });
+
+        list?.addEventListener('change', (e) => {
+            const toggle = e.target.closest('.fixed-toggle');
+            if (!toggle) return;
+            if (!toggle.checked) {
+                distributePercentages();
+            }
+        });
+
+        initializeDefaults();
     });
 </script>
