@@ -63,6 +63,10 @@ class RegistroTecnicoController extends Controller
             ->orderBy('name')
             ->get();
 
+        $clientGroups = \App\Models\ClientGroup::where('organization_id', $organizationId)
+            ->orderBy('name')
+            ->get();
+
         $farms = Farm::with('lots')
             ->where('organization_id', $organizationId)
             ->where('status', true)
@@ -92,6 +96,7 @@ class RegistroTecnicoController extends Controller
                 'id' => $farm->id,
                 'name' => $farm->name,
                 'client_id' => $farm->client_id,
+                'client_group_id' => $farm->client_group_id,
                 'localidad' => $farm->client?->localidad,
                 'polygon' => $farm->polygon_coordinates ? json_decode($farm->polygon_coordinates, true) : null,
                 'lat' => $farm->lat,
@@ -100,7 +105,7 @@ class RegistroTecnicoController extends Controller
             ];
         })->values();
 
-        return view('registro-tecnicos.create', compact('clients', 'farms', 'objectiveOptions', 'farmsMapPayload'));
+        return view('registro-tecnicos.create', compact('clients', 'clientGroups', 'farms', 'objectiveOptions', 'farmsMapPayload'));
     }
 
     public function store(Request $request)
@@ -257,6 +262,10 @@ class RegistroTecnicoController extends Controller
             ->orderBy('name')
             ->get();
 
+        $clientGroups = \App\Models\ClientGroup::where('organization_id', $organizationId)
+            ->orderBy('name')
+            ->get();
+
         $farms = Farm::with('lots')
             ->where('organization_id', $organizationId)
             ->where('status', true)
@@ -287,6 +296,7 @@ class RegistroTecnicoController extends Controller
                 'id' => $farm->id,
                 'name' => $farm->name,
                 'client_id' => $farm->client_id,
+                'client_group_id' => $farm->client_group_id,
                 'localidad' => $farm->client?->localidad,
                 'polygon' => $farm->polygon_coordinates ? json_decode($farm->polygon_coordinates, true) : null,
                 'lat' => $farm->lat,
@@ -295,7 +305,7 @@ class RegistroTecnicoController extends Controller
             ];
         })->values();
 
-        return view('registro-tecnicos.edit', compact('registroTecnico', 'clients', 'farms', 'objectiveOptions', 'statusLabels', 'farmsMapPayload'));
+        return view('registro-tecnicos.edit', compact('registroTecnico', 'clients', 'clientGroups', 'farms', 'objectiveOptions', 'statusLabels', 'farmsMapPayload'));
     }
 
     public function update(Request $request, RegistroTecnico $registroTecnico)

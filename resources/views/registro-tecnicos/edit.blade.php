@@ -35,15 +35,27 @@
                 </div>
 
                 <div>
-                    <label for="client_id" class="block text-sm font-medium text-gray-700">Cliente</label>
-                    <select name="client_id" id="client_id" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
-                        <option value="">Seleccionar cliente</option>
-                        @foreach($clients as $client)
-                            <option value="{{ $client->id }}" {{ old('client_id', $registroTecnico->client_id) == $client->id ? 'selected' : '' }}>
-                                {{ $client->number }} - {{ $client->name }}
-                            </option>
-                        @endforeach
+                    <label for="client_selector" class="block text-sm font-medium text-gray-700">Cliente/Grupo</label>
+                    <select name="client_selector" id="client_selector" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
+                        <option value="">Seleccionar cliente o grupo</option>
+                        <optgroup label="Clientes">
+                            @foreach($clients as $client)
+                                @php($clientValue = 'client:' . $client->id)
+                                <option value="{{ $clientValue }}" {{ old('client_selector') === $clientValue || (!old('client_selector') && old('client_id', $registroTecnico->client_id) == $client->id) ? 'selected' : '' }}>
+                                    {{ $client->number }} - {{ $client->name }}
+                                </option>
+                            @endforeach
+                        </optgroup>
+                        <optgroup label="Grupos">
+                            @foreach($clientGroups as $group)
+                                @php($groupValue = 'group:' . $group->id)
+                                <option value="{{ $groupValue }}" {{ old('client_selector') === $groupValue ? 'selected' : '' }}>
+                                    {{ $group->name }}
+                                </option>
+                            @endforeach
+                        </optgroup>
                     </select>
+                    <input type="hidden" name="client_id" id="client_id" value="{{ old('client_id', $registroTecnico->client_id) }}">
                 </div>
 
                 <div>
@@ -51,7 +63,7 @@
                     <select name="farm_id" id="farm_id" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
                         <option value="">Seleccionar explotación</option>
                         @foreach($farms as $farm)
-                            <option value="{{ $farm->id }}" data-client="{{ $farm->client_id }}" {{ old('farm_id', $registroTecnico->farm_id) == $farm->id ? 'selected' : '' }}>
+                            <option value="{{ $farm->id }}" data-client="{{ $farm->client_id }}" data-group="{{ $farm->client_group_id }}" {{ old('farm_id', $registroTecnico->farm_id) == $farm->id ? 'selected' : '' }}>
                                 {{ $farm->name }}
                             </option>
                         @endforeach
@@ -64,7 +76,7 @@
                         <option value="">Seleccionar lote</option>
                         @foreach($farms as $farm)
                             @foreach($farm->lots as $lot)
-                                <option value="{{ $lot->id }}" data-client="{{ $farm->client_id }}" data-farm="{{ $farm->id }}" {{ old('lot_id', $registroTecnico->lot_id) == $lot->id ? 'selected' : '' }}>
+                                <option value="{{ $lot->id }}" data-client="{{ $farm->client_id }}" data-group="{{ $farm->client_group_id }}" data-farm="{{ $farm->id }}" {{ old('lot_id', $registroTecnico->lot_id) == $lot->id ? 'selected' : '' }}>
                                     {{ $farm->name }} - {{ $lot->name }}
                                 </option>
                             @endforeach
@@ -156,7 +168,8 @@
             const latInput = document.getElementById('lat');
             const lngInput = document.getElementById('lng');
             const coordText = document.getElementById('coordText');
-            const clientSelect = document.getElementById('client_id');
+            const clientSelector = document.getElementById('client_selector');
+            const clientIdInput = document.getElementById('client_id');
             const farmSelect = document.getElementById('farm_id');
             const lotSelect = document.getElementById('lot_id');
             const statusSelect = document.getElementById('status');
@@ -226,11 +239,8 @@
                     poly.on('click', () => {
                         const center = poly.getBounds().getCenter();
                         setLocation(center.lat, center.lng, 16);
-                        if (clientSelect && farm.client_id) {
-                            clientSelect.value = String(farm.client_id);
-                            if (typeof filterFarms === 'function') {
-                                filterFarms();
-                            }
+                        if (typeof setSelectorFromFarm === 'function') {
+                            setSelectorFromFarm(farm);
                         }
                         if (farmSelect) {
                             farmSelect.value = String(farm.id);
@@ -250,11 +260,8 @@
                         poly.on('click', () => {
                             const center = poly.getBounds().getCenter();
                             setLocation(center.lat, center.lng, 16);
-                            if (clientSelect && farm.client_id) {
-                                clientSelect.value = String(farm.client_id);
-                                if (typeof filterFarms === 'function') {
-                                    filterFarms();
-                                }
+                            if (typeof setSelectorFromFarm === 'function') {
+                                setSelectorFromFarm(farm);
                             }
                             if (farmSelect) {
                                 farmSelect.value = String(farm.id);
@@ -346,11 +353,8 @@
                     if (farmSelect) {
                         farmSelect.value = String(id);
                     }
-                    if (clientSelect && farm.client_id) {
-                        clientSelect.value = String(farm.client_id);
-                        if (typeof filterFarms === 'function') {
-                            filterFarms();
-                        }
+                    if (typeof setSelectorFromFarm === 'function') {
+                        setSelectorFromFarm(farm);
                         if (farmSelect) {
                             farmSelect.value = String(id);
                         }
@@ -412,11 +416,8 @@
                 }
 
                 if (matched) {
-                    if (clientSelect && matched.client_id) {
-                        clientSelect.value = String(matched.client_id);
-                        if (typeof filterFarms === 'function') {
-                            filterFarms();
-                        }
+                    if (typeof setSelectorFromFarm === 'function') {
+                        setSelectorFromFarm(matched);
                     }
                     if (farmSelect) {
                         farmSelect.value = String(matched.id);
@@ -431,8 +432,11 @@
                         highlightLot(matchedLot.id);
                     }
                 } else {
-                    if (clientSelect) {
-                        clientSelect.value = '';
+                    if (clientSelector) {
+                        clientSelector.value = '';
+                    }
+                    if (clientIdInput) {
+                        clientIdInput.value = '';
                     }
                     if (farmSelect) {
                         farmSelect.value = '';
@@ -561,14 +565,48 @@
                 }
             });
 
+            function getSelection() {
+                const value = clientSelector?.value || '';
+                if (value.startsWith('client:')) {
+                    return { clientId: value.replace('client:', ''), groupId: null };
+                }
+                if (value.startsWith('group:')) {
+                    return { clientId: null, groupId: value.replace('group:', '') };
+                }
+                return { clientId: null, groupId: null };
+            }
+
+            function applySelectorToHidden() {
+                if (!clientIdInput) return;
+                const { clientId } = getSelection();
+                clientIdInput.value = clientId || '';
+            }
+
+            function setSelectorFromFarm(farm) {
+                if (!clientSelector || !farm) return;
+                if (farm.client_group_id) {
+                    clientSelector.value = `group:${farm.client_group_id}`;
+                } else if (farm.client_id) {
+                    clientSelector.value = `client:${farm.client_id}`;
+                }
+                if (clientIdInput && farm.client_id) {
+                    clientIdInput.value = String(farm.client_id);
+                }
+                if (typeof filterFarms === 'function') {
+                    filterFarms();
+                }
+            }
+
             function filterFarms() {
-                const clientId = clientSelect.value;
+                const { clientId, groupId } = getSelection();
                 Array.from(farmSelect.options).forEach(option => {
                     if (!option.value) return;
-                    const matches = !clientId || option.dataset.client === clientId;
+                    const matches = clientId
+                        ? option.dataset.client === clientId
+                        : (groupId ? option.dataset.group === groupId : true);
                     option.hidden = !matches;
                 });
-                if (clientId && farmSelect.selectedOptions.length && farmSelect.selectedOptions[0].hidden) {
+                if ((clientId || groupId) && farmSelect.selectedOptions.length && farmSelect.selectedOptions[0].hidden) {
                     farmSelect.value = '';
                 }
                 if (farmSelect.value) {
@@ -580,11 +618,13 @@
 
             function filterLots() {
                 if (!lotSelect) return;
-                const clientId = clientSelect.value;
+                const { clientId, groupId } = getSelection();
                 const farmId = farmSelect.value;
                 Array.from(lotSelect.options).forEach(option => {
                     if (!option.value) return;
-                    const matchesClient = !clientId || option.dataset.client === clientId;
+                    const matchesClient = clientId
+                        ? option.dataset.client === clientId
+                        : (groupId ? option.dataset.group === groupId : true);
                     const matchesFarm = !farmId || option.dataset.farm === farmId;
                     option.hidden = !(matchesClient && matchesFarm);
                 });
@@ -598,7 +638,8 @@
                 canceledWrapper.classList.toggle('hidden', !show);
             }
 
-            clientSelect.addEventListener('change', () => {
+            clientSelector?.addEventListener('change', () => {
+                applySelectorToHidden();
                 filterFarms();
                 filterLots();
             });
@@ -609,16 +650,16 @@
                 if (lotSelect) {
                     lotSelect.value = '';
                 }
+                if (farm) {
+                    setSelectorFromFarm(farm);
+                }
                 filterLots();
             });
             function syncFromLotSelection() {
                 if (!lotSelect || !lotSelect.value) return;
                 const match = findLotById(lotSelect.value);
                 if (match) {
-                    if (clientSelect && match.farm.client_id) {
-                        clientSelect.value = String(match.farm.client_id);
-                        filterFarms();
-                    }
+                    setSelectorFromFarm(match.farm);
                     if (farmSelect) {
                         farmSelect.value = String(match.farm.id);
                     }
@@ -637,6 +678,13 @@
                 if (!lotSelect.value) return;
                 syncFromLotSelection();
             });
+            applySelectorToHidden();
+            if (!clientSelector?.value && farmSelect?.value) {
+                const farm = farmsGeo.find(f => String(f.id) === String(farmSelect.value));
+                if (farm) {
+                    setSelectorFromFarm(farm);
+                }
+            }
             statusSelect.addEventListener('change', toggleCanceled);
             filterFarms();
             filterLots();
