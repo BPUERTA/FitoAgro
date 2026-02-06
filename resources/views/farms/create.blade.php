@@ -11,10 +11,10 @@
             <input type="text" id="client_selector_input" list="client_selector_list" placeholder="Escribir para buscar" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" autocomplete="off">
             <datalist id="client_selector_list">
                 @foreach($clients as $client)
-                    <option value="Cliente: {{ $client->number }} - {{ $client->name }}" data-type="client" data-id="{{ $client->id }}" data-client-name="{{ $client->name }}"></option>
+                    <option value="Cliente: {{ $client->number }} - {{ $client->name }}"></option>
                 @endforeach
                 @foreach($clientGroups as $group)
-                    <option value="Grupo: {{ $group->name }}" data-type="group" data-id="{{ $group->id }}"></option>
+                    <option value="Grupo: {{ $group->name }}"></option>
                 @endforeach
             </datalist>
             <input type="hidden" name="client_id" id="client_id" value="{{ old('client_id') }}">
@@ -77,18 +77,37 @@ function updateFarmName() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const selectorOptions = @json(
+        $clients->map(fn($c) => [
+            'label' => 'Cliente: ' . $c->number . ' - ' . $c->name,
+            'type' => 'client',
+            'id' => $c->id,
+            'clientName' => $c->name,
+        ])->merge(
+            $clientGroups->map(fn($g) => [
+                'label' => 'Grupo: ' . $g->name,
+                'type' => 'group',
+                'id' => $g->id,
+            ])
+        )->values()
+    );
+    const selectorMap = new Map(selectorOptions.map(option => [option.label, option]));
     const clientInput = document.getElementById('client_selector_input');
     const clientIdInput = document.getElementById('client_id');
     const clientGroupInput = document.getElementById('client_group_id');
 
     function applySelection() {
         const value = clientInput?.value || '';
-        const option = document.querySelector(`#client_selector_list option[value="${CSS.escape(value)}"]`);
-        if (option?.dataset.type === 'client') {
-            clientIdInput.value = option.dataset.id || '';
+        let option = selectorMap.get(value);
+        if (!option && value) {
+            const lower = value.toLowerCase();
+            option = selectorOptions.find(item => item.label.toLowerCase() === lower);
+        }
+        if (option?.type === 'client') {
+            clientIdInput.value = option.id || '';
             clientGroupInput.value = '';
-        } else if (option?.dataset.type === 'group') {
-            clientGroupInput.value = option.dataset.id || '';
+        } else if (option?.type === 'group') {
+            clientGroupInput.value = option.id || '';
             clientIdInput.value = '';
         } else {
             clientIdInput.value = '';
@@ -106,16 +125,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (clientIdInput.value) {
-        const option = document.querySelector(`#client_selector_list option[data-type="client"][data-id="${clientIdInput.value}"]`);
-        if (option) {
-            clientInput.value = option.value;
-        }
+        const match = selectorOptions.find(item => item.type === 'client' && String(item.id) === String(clientIdInput.value));
+        if (match) clientInput.value = match.label;
     } else if (clientGroupInput.value) {
-        const option = document.querySelector(`#client_selector_list option[data-type="group"][data-id="${clientGroupInput.value}"]`);
-        if (option) {
-            clientInput.value = option.value;
-        }
+        const match = selectorOptions.find(item => item.type === 'group' && String(item.id) === String(clientGroupInput.value));
+        if (match) clientInput.value = match.label;
     }
+
+    document.getElementById('farmForm')?.addEventListener('submit', () => {
+        applySelection();
+    });
 
     applySelection();
     updateFarmName();
