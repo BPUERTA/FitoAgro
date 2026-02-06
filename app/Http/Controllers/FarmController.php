@@ -60,7 +60,7 @@ class FarmController extends Controller
             'alert_nbr' => ['nullable', 'boolean'],
         ]);
 
-        if (empty($data['client_id']) && empty($data['client_group_id']) && !empty($data['client_selector_input'])) {
+        if (!empty($data['client_selector_input'])) {
             $selectorValue = trim($data['client_selector_input']);
             $organizationId = $user->is_admin ? null : $user->organization_id;
             if (str_starts_with(mb_strtolower($selectorValue), 'cliente:')) {
@@ -81,6 +81,7 @@ class FarmController extends Controller
                 $client = $query->first();
                 if ($client) {
                     $data['client_id'] = $client->id;
+                    $data['client_group_id'] = null;
                 }
             } elseif (str_starts_with(mb_strtolower($selectorValue), 'grupo:')) {
                 $raw = trim(mb_substr($selectorValue, 6));
@@ -93,6 +94,7 @@ class FarmController extends Controller
                     ->first();
                 if ($group) {
                     $data['client_group_id'] = $group->id;
+                    $data['client_id'] = null;
                 }
             }
         }
@@ -230,7 +232,7 @@ class FarmController extends Controller
             'alert_nbr' => ['nullable', 'boolean'],
         ]);
 
-        if (empty($data['client_id']) && empty($data['client_group_id']) && !empty($data['client_selector_input'])) {
+        if (!empty($data['client_selector_input'])) {
             $selectorValue = trim($data['client_selector_input']);
             $organizationId = $user->is_admin ? null : $user->organization_id;
             if (str_starts_with(mb_strtolower($selectorValue), 'cliente:')) {
@@ -251,6 +253,7 @@ class FarmController extends Controller
                 $client = $query->first();
                 if ($client) {
                     $data['client_id'] = $client->id;
+                    $data['client_group_id'] = null;
                 }
             } elseif (str_starts_with(mb_strtolower($selectorValue), 'grupo:')) {
                 $raw = trim(mb_substr($selectorValue, 6));
@@ -263,6 +266,7 @@ class FarmController extends Controller
                     ->first();
                 if ($group) {
                     $data['client_group_id'] = $group->id;
+                    $data['client_id'] = null;
                 }
             }
         }
