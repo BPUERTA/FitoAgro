@@ -821,6 +821,24 @@
         }
     }
 
+    function updateAutoAreaState() {
+        const autoArea = document.getElementById('auto_area');
+        const hasInput = document.querySelector('[data-has-input]');
+        if (!autoArea || !hasInput) return;
+
+        const farmLayer = getFarmLayer();
+        if (!farmLayer) return;
+
+        const areaHa = calculateHectares(farmLayer.getLatLngs()[0] || []);
+        if (!areaHa || areaHa <= 0) return;
+
+        const declared = parseFloat(normalizeDecimalInput(hasInput.value || '0'));
+        if (!Number.isFinite(declared) || declared <= 0) return;
+
+        const same = areaHa.toFixed(2) === declared.toFixed(2);
+        autoArea.checked = same;
+    }
+
     function toggleClientSelect() {
         const groupSelect = document.getElementById('client_group_id');
         const clientSelect = document.getElementById('client_id');
@@ -883,6 +901,7 @@
             document.querySelectorAll('[data-lot-target]').forEach((btn) => {
                 btn.addEventListener('click', () => setActiveTarget('lot', btn.dataset.lotTarget));
             });
+            updateAutoAreaState();
         } catch (e) {
             console.error('Map init failed', e);
         }
@@ -906,6 +925,9 @@
                         }
                     }
                 }
+            });
+            hasInput.addEventListener('input', () => {
+                updateAutoAreaState();
             });
         }
 
