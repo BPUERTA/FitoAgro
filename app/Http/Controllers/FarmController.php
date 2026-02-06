@@ -88,7 +88,9 @@ class FarmController extends Controller
                 if ($organizationId) {
                     $query->where('organization_id', $organizationId);
                 }
-                $group = $query->where('name', $raw)->first();
+                $group = $query
+                    ->whereRaw('LOWER(name) = ?', [mb_strtolower($raw)])
+                    ->first();
                 if ($group) {
                     $data['client_group_id'] = $group->id;
                 }
@@ -256,7 +258,9 @@ class FarmController extends Controller
                 if ($organizationId) {
                     $query->where('organization_id', $organizationId);
                 }
-                $group = $query->where('name', $raw)->first();
+                $group = $query
+                    ->whereRaw('LOWER(name) = ?', [mb_strtolower($raw)])
+                    ->first();
                 if ($group) {
                     $data['client_group_id'] = $group->id;
                 }
