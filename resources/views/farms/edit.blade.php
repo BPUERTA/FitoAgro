@@ -22,27 +22,16 @@
                 <input type="hidden" name="lng" id="lng" value="{{ old('lng', $farm->lng) }}">
                 
                 <div>
-                    <label for="client_selector" class="block text-sm font-medium text-gray-700">Cliente/Grupo</label>
-                    <input type="text" id="client_selector_search" placeholder="Buscar cliente o grupo" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 text-sm" autocomplete="off">
-                    <select id="client_selector" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" onchange="updateFarmName()">
-                        <option value="">Seleccionar cliente o grupo</option>
-                        <optgroup label="Clientes">
-                            @foreach($clients as $client)
-                                @php($clientValue = 'client:' . $client->id)
-                                <option value="{{ $clientValue }}" data-client-name="{{ $client->name }}" {{ old('client_id', $farm->client_id) == $client->id && !old('client_group_id', $farm->client_group_id) ? 'selected' : '' }}>
-                                    {{ $client->number }} - {{ $client->name }}
-                                </option>
-                            @endforeach
-                        </optgroup>
-                        <optgroup label="Grupos">
-                            @foreach($clientGroups as $group)
-                                @php($groupValue = 'group:' . $group->id)
-                                <option value="{{ $groupValue }}" {{ old('client_group_id', $farm->client_group_id) == $group->id ? 'selected' : '' }}>
-                                    {{ $group->name }}
-                                </option>
-                            @endforeach
-                        </optgroup>
-                    </select>
+                    <label for="client_selector_input" class="block text-sm font-medium text-gray-700">Cliente/Grupo</label>
+                    <input type="text" id="client_selector_input" list="client_selector_list" placeholder="Escribir para buscar" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" autocomplete="off">
+                    <datalist id="client_selector_list">
+                        @foreach($clients as $client)
+                            <option value="Cliente: {{ $client->number }} - {{ $client->name }}" data-type="client" data-id="{{ $client->id }}" data-client-name="{{ $client->name }}"></option>
+                        @endforeach
+                        @foreach($clientGroups as $group)
+                            <option value="Grupo: {{ $group->name }}" data-type="group" data-id="{{ $group->id }}"></option>
+                        @endforeach
+                    </datalist>
                     <input type="hidden" name="client_id" id="client_id" value="{{ old('client_id', $farm->client_id) }}">
                     <input type="hidden" name="client_group_id" id="client_group_id" value="{{ old('client_group_id', $farm->client_group_id) }}">
                     <p class="mt-1 text-xs text-gray-500">Elegí un cliente o un grupo. Si elegís un grupo, se asigna automáticamente.</p>
@@ -805,17 +794,13 @@
     }
 
     function updateFarmName() {
-        const clientSelector = document.getElementById('client_selector');
+        const clientInput = document.getElementById('client_selector_input');
         const nameInput = document.getElementById('name');
-        if (!clientSelector) return;
-        const selectedOption = clientSelector.options[clientSelector.selectedIndex];
-        const selectedValue = selectedOption?.value || '';
-        
-        // Solo actualizar si hay un cliente seleccionado y el campo está vacío o no ha sido editado manualmente
-        if (selectedValue.startsWith('client:') && selectedOption.dataset.clientName) {
-            const clientName = selectedOption.dataset.clientName;
-            
-            // Si el campo está vacío o tiene el valor de un cliente anterior, actualizarlo
+        if (!clientInput) return;
+        const selectedValue = clientInput.value || '';
+        const option = document.querySelector(`#client_selector_list option[value="${CSS.escape(selectedValue)}"]`);
+        if (option && option.dataset.type === 'client' && option.dataset.clientName) {
+            const clientName = option.dataset.clientName;
             if (!nameInput.value || nameInput.value.startsWith('Explotación ')) {
                 nameInput.value = 'Explotación ' + clientName;
             }
@@ -841,18 +826,18 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const clientSelector = document.getElementById('client_selector');
-        const clientSearch = document.getElementById('client_selector_search');
+        const clientInput = document.getElementById('client_selector_input');
         const clientIdInput = document.getElementById('client_id');
         const clientGroupInput = document.getElementById('client_group_id');
 
         function applySelection() {
-            const value = clientSelector?.value || '';
-            if (value.startsWith('client:')) {
-                clientIdInput.value = value.replace('client:', '');
+            const value = clientInput?.value || '';
+            const option = document.querySelector(`#client_selector_list option[value="${CSS.escape(value)}"]`);
+            if (option?.dataset.type === 'client') {
+                clientIdInput.value = option.dataset.id || '';
                 clientGroupInput.value = '';
-            } else if (value.startsWith('group:')) {
-                clientGroupInput.value = value.replace('group:', '');
+            } else if (option?.dataset.type === 'group') {
+                clientGroupInput.value = option.dataset.id || '';
                 clientIdInput.value = '';
             } else {
                 clientIdInput.value = '';
@@ -860,18 +845,27 @@
             }
         }
 
-        clientSelector?.addEventListener('change', () => {
+        clientInput?.addEventListener('change', () => {
             applySelection();
             updateFarmName();
         });
-        clientSearch?.addEventListener('input', () => {
-            const term = clientSearch.value.trim().toLowerCase();
-            Array.from(clientSelector.options).forEach((option) => {
-                if (!option.value) return;
-                const match = option.text.toLowerCase().includes(term);
-                option.hidden = term ? (!match && !option.selected) : false;
-            });
+        clientInput?.addEventListener('blur', () => {
+            applySelection();
+            updateFarmName();
         });
+
+        if (clientIdInput.value) {
+            const option = document.querySelector(`#client_selector_list option[data-type="client"][data-id="${clientIdInput.value}"]`);
+            if (option) {
+                clientInput.value = option.value;
+            }
+        } else if (clientGroupInput.value) {
+            const option = document.querySelector(`#client_selector_list option[data-type="group"][data-id="${clientGroupInput.value}"]`);
+            if (option) {
+                clientInput.value = option.value;
+            }
+        }
+
         applySelection();
         updateFarmName();
 
