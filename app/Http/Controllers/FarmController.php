@@ -60,6 +60,7 @@ class FarmController extends Controller
             'alert_nbr' => ['nullable', 'boolean'],
         ]);
 
+        $selectedGroupExplicit = false;
         if (!empty($data['client_selector_input'])) {
             $selectorValue = trim($data['client_selector_input']);
             $organizationId = $user->is_admin ? null : $user->organization_id;
@@ -84,6 +85,7 @@ class FarmController extends Controller
                     $data['client_group_id'] = null;
                 }
             } elseif (str_starts_with(mb_strtolower($selectorValue), 'grupo:')) {
+                $selectedGroupExplicit = true;
                 $raw = trim(mb_substr($selectorValue, 6));
                 $query = \App\Models\ClientGroup::query();
                 if ($organizationId) {
@@ -291,19 +293,14 @@ class FarmController extends Controller
                     abort(403, 'El grupo seleccionado no pertenece a la misma organización.');
                 }
             } else {
-                if ($farm->client_id && $farm->client && $farm->client->organization_id === $group->organization_id) {
-                    $client = $farm->client;
-                    $data['client_id'] = $client->id;
-                } else {
-                    $member = $group->members->sortByDesc('percentage')->first();
-                    if (!$member) {
-                        return back()->withErrors([
-                            'client_group_id' => 'El grupo seleccionado no tiene clientes.',
-                        ])->withInput();
-                    }
-                    $client = \App\Models\Client::findOrFail($member->client_id);
-                    $data['client_id'] = $client->id;
+                $member = $group->members->sortByDesc('percentage')->first();
+                if (!$member) {
+                    return back()->withErrors([
+                        'client_group_id' => 'El grupo seleccionado no tiene clientes.',
+                    ])->withInput();
                 }
+                $client = \App\Models\Client::findOrFail($member->client_id);
+                $data['client_id'] = $client->id;
             }
         } else {
             $client = \App\Models\Client::findOrFail($data['client_id']);
