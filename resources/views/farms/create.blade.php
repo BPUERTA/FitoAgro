@@ -77,20 +77,23 @@ function updateFarmName() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const selectorOptions = @json(
-        $clients->map(fn($c) => [
-            'label' => 'Cliente: ' . $c->number . ' - ' . $c->name,
-            'type' => 'client',
-            'id' => $c->id,
-            'clientName' => $c->name,
-        ])->merge(
-            $clientGroups->map(fn($g) => [
+    @php
+        $clientSelectorOptions = $clients->map(function ($c) {
+            return [
+                'label' => 'Cliente: ' . $c->number . ' - ' . $c->name,
+                'type' => 'client',
+                'id' => $c->id,
+                'clientName' => $c->name,
+            ];
+        })->merge($clientGroups->map(function ($g) {
+            return [
                 'label' => 'Grupo: ' . $g->name,
                 'type' => 'group',
                 'id' => $g->id,
-            ])
-        )->values()
-    );
+            ];
+        }))->values();
+    @endphp
+    const selectorOptions = @json($clientSelectorOptions);
     const selectorMap = new Map(selectorOptions.map(option => [option.label, option]));
     const clientInput = document.getElementById('client_selector_input');
     const clientIdInput = document.getElementById('client_id');
