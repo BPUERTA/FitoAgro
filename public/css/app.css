@@ -1,0 +1,9 @@
+/* Archivo CSS principal para Laravel */
+body {
+    font-family: Arial, sans-serif;
+    background: #f8fafc;
+    color: #333;
+}
+h1 {
+    color: #636b6f;
+}
