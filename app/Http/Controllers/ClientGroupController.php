@@ -123,12 +123,12 @@ class ClientGroupController extends Controller
 
         $clientIds = collect($data['members'])->pluck('client_id');
         if ($clientIds->count() !== $clientIds->unique()->count()) {
-            return back()->withErrors(['members' => 'No puede repetir clientes en el mismo grupo.'])->throwResponse();
+            return back()->withErrors(['members' => 'No puede repetir clientes en el mismo grupo.'])->withInput()->throwResponse();
         }
 
         $sum = collect($data['members'])->sum(fn ($m) => (float) $m['percentage']);
         if (abs($sum - 100.0) > 0.01) {
-            return back()->withErrors(['members' => 'La suma de porcentajes debe ser 100%.'])->throwResponse();
+            return back()->withErrors(['members' => 'La suma de porcentajes debe ser 100%.'])->withInput()->throwResponse();
         }
 
         $clientIds = collect($data['members'])->pluck('client_id')->unique()->values();
@@ -136,7 +136,7 @@ class ClientGroupController extends Controller
             ->where('organization_id', $organizationId)
             ->count();
         if ($count !== $clientIds->count()) {
-            return back()->withErrors(['members' => 'Hay clientes que no pertenecen a tu organización.'])->throwResponse();
+            return back()->withErrors(['members' => 'Hay clientes que no pertenecen a tu organización.'])->withInput()->throwResponse();
         }
 
         return $data;
