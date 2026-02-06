@@ -8,20 +8,18 @@
             <h2 class="text-lg font-semibold text-gray-800 mb-4">Información</h2>
             
             <div>
-                <span class="font-semibold text-gray-700">Cliente:</span>
-                <span class="text-gray-900">{{ $farm->client->number }} - {{ $farm->client->name }}</span>
-            </div>
-            @if($farm->clientGroup)
-                <div>
-                    <span class="font-semibold text-gray-700">Grupo de clientes:</span>
-                    <span class="text-gray-900">{{ $farm->clientGroup->name }}</span>
+                <span class="font-semibold text-gray-700">Cliente/Grupo:</span>
+                <span class="text-gray-900">
+                    {{ $farm->clientGroup?->name ?? ($farm->client ? ($farm->client->number . ' - ' . $farm->client->name) : '—') }}
+                </span>
+                @if($farm->clientGroup)
                     <div class="mt-1 text-xs text-gray-600 space-y-0.5">
                         @foreach($farm->clientGroup->members as $member)
                             <div>{{ $member->client?->name ?? '—' }} ({{ number_format((float) $member->percentage, 2) }}%)</div>
                         @endforeach
                     </div>
-                </div>
-            @endif
+                @endif
+            </div>
             <div>
                 <span class="font-semibold text-gray-700">Nombre:</span>
                 <span class="text-gray-900">{{ $farm->name }}</span>
