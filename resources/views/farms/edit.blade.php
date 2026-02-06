@@ -22,8 +22,8 @@
                 <input type="hidden" name="lng" id="lng" value="{{ old('lng', $farm->lng) }}">
                 
                 <div>
-                    <label for="client_id" class="block text-sm font-medium text-gray-700">Cliente <span class="text-red-500">*</span></label>
-                    <select id="client_id" name="client_id" required class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" onchange="updateFarmName()">
+                    <label for="client_id" class="block text-sm font-medium text-gray-700">Cliente</label>
+                    <select id="client_id" name="client_id" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" onchange="updateFarmName()">
                         <option value="">Seleccione un cliente</option>
                         @foreach($clients as $client)
                             <option value="{{ $client->id }}" 
@@ -33,6 +33,7 @@
                             </option>
                         @endforeach
                     </select>
+                    <p class="mt-1 text-xs text-gray-500">Podés elegir un cliente o un grupo. Si elegís un grupo, se asigna automáticamente.</p>
                     @error('client_id')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -820,7 +821,25 @@
         }
     }
 
+    function toggleClientSelect() {
+        const groupSelect = document.getElementById('client_group_id');
+        const clientSelect = document.getElementById('client_id');
+        if (!groupSelect || !clientSelect) return;
+
+        if (groupSelect.value) {
+            clientSelect.value = '';
+            clientSelect.disabled = true;
+            clientSelect.classList.add('bg-gray-100', 'text-gray-500');
+        } else {
+            clientSelect.disabled = false;
+            clientSelect.classList.remove('bg-gray-100', 'text-gray-500');
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('client_group_id')?.addEventListener('change', toggleClientSelect);
+        toggleClientSelect();
+
         document.getElementById('map-instructions-btn')?.addEventListener('click', () => {
             document.getElementById('map-instructions-modal')?.classList.remove('hidden');
         });

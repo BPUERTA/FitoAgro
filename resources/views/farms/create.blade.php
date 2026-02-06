@@ -4,11 +4,11 @@
     @if(session('error'))
         <div class="mb-4 p-2 bg-red-100 text-red-800 rounded">{{ session('error') }}</div>
     @endif
-    <form method="POST" action="{{ route('farms.store') }}" class="bg-white p-6 rounded shadow space-y-4">
+    <form method="POST" action="{{ route('farms.store') }}" class="bg-white p-6 rounded shadow space-y-4" id="farmForm">
         @csrf
         <div>
-            <label for="client_id" class="block text-sm font-medium text-gray-700">Cliente <span class="text-red-500">*</span></label>
-            <select id="client_id" name="client_id" required class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" onchange="updateFarmName()">
+            <label for="client_id" class="block text-sm font-medium text-gray-700">Cliente</label>
+            <select id="client_id" name="client_id" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" onchange="updateFarmName()">
                 <option value="">Seleccione un cliente</option>
                 @foreach($clients as $client)
                     <option value="{{ $client->id }}" data-client-name="{{ $client->name }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
@@ -16,6 +16,7 @@
                     </option>
                 @endforeach
             </select>
+            <p class="mt-1 text-xs text-gray-500">Podés elegir un cliente o un grupo. Si elegís un grupo, se asigna automáticamente.</p>
             @error('client_id')
                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
@@ -70,6 +71,21 @@
     </form>
 </div>
 <script>
+function toggleClientSelect() {
+    const groupSelect = document.getElementById('client_group_id');
+    const clientSelect = document.getElementById('client_id');
+    if (!groupSelect || !clientSelect) return;
+
+    if (groupSelect.value) {
+        clientSelect.value = '';
+        clientSelect.disabled = true;
+        clientSelect.classList.add('bg-gray-100', 'text-gray-500');
+    } else {
+        clientSelect.disabled = false;
+        clientSelect.classList.remove('bg-gray-100', 'text-gray-500');
+    }
+}
+
 function updateFarmName() {
     const clientSelect = document.getElementById('client_id');
     const nameInput = document.getElementById('name');
@@ -85,6 +101,12 @@ function updateFarmName() {
         }
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const groupSelect = document.getElementById('client_group_id');
+    groupSelect?.addEventListener('change', toggleClientSelect);
+    toggleClientSelect();
+});
 </script>
 </x-app-layout>
 

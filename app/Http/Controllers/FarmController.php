@@ -48,7 +48,7 @@ class FarmController extends Controller
     {
         $user = auth()->user();
         $data = $request->validate([
-            'client_id' => ['required', 'exists:clients,id'],
+            'client_id' => ['nullable', 'exists:clients,id'],
             'client_group_id' => ['nullable', 'exists:client_groups,id'],
             'name' => ['required', 'string', 'max:255'],
             'has' => ['required', 'numeric', 'min:0'],
@@ -58,20 +58,42 @@ class FarmController extends Controller
             'alert_ndmi' => ['nullable', 'boolean'],
             'alert_nbr' => ['nullable', 'boolean'],
         ]);
+
+        if (empty($data['client_id']) && empty($data['client_group_id'])) {
+            return back()->withErrors([
+                'client_id' => 'Debe seleccionar un cliente o un grupo de clientes.',
+            ])->withInput();
+        }
         
         // Verificar que el cliente pertenece a la organización del usuario
-        $client = \App\Models\Client::findOrFail($data['client_id']);
-        if (!$user->is_admin && $client->organization_id != $user->organization_id) {
-            abort(403, 'No puedes crear una explotación para un cliente de otra organización');
-        }
+        $client = null;
         if (!empty($data['client_group_id'])) {
-            $group = \App\Models\ClientGroup::findOrFail($data['client_group_id']);
+            $group = \App\Models\ClientGroup::with('members')->findOrFail($data['client_group_id']);
             if (!$user->is_admin && $group->organization_id != $user->organization_id) {
                 abort(403, 'No puedes usar un grupo de otra organización');
             }
-            if ($group->organization_id !== $client->organization_id) {
-                abort(403, 'El grupo seleccionado no pertenece a la misma organización.');
+
+            if (!empty($data['client_id'])) {
+                $client = \App\Models\Client::findOrFail($data['client_id']);
+                if ($group->organization_id !== $client->organization_id) {
+                    abort(403, 'El grupo seleccionado no pertenece a la misma organización.');
+                }
+            } else {
+                $member = $group->members->sortByDesc('percentage')->first();
+                if (!$member) {
+                    return back()->withErrors([
+                        'client_group_id' => 'El grupo seleccionado no tiene clientes.',
+                    ])->withInput();
+                }
+                $client = \App\Models\Client::findOrFail($member->client_id);
+                $data['client_id'] = $client->id;
             }
+        } else {
+            $client = \App\Models\Client::findOrFail($data['client_id']);
+        }
+
+        if (!$user->is_admin && $client->organization_id != $user->organization_id) {
+            abort(403, 'No puedes crear una explotación para un cliente de otra organización');
         }
         
         $data['status'] = isset($data['status']) && ($data['status'] === '1' || $data['status'] === 1 || $data['status'] === true) ? 1 : 0;
@@ -155,7 +177,7 @@ class FarmController extends Controller
         }
         
         $data = $request->validate([
-            'client_id' => ['required', 'exists:clients,id'],
+            'client_id' => ['nullable', 'exists:clients,id'],
             'client_group_id' => ['nullable', 'exists:client_groups,id'],
             'name' => ['required', 'string', 'max:255'],
             'has' => ['required', 'numeric', 'min:0'],
@@ -168,20 +190,47 @@ class FarmController extends Controller
             'alert_ndmi' => ['nullable', 'boolean'],
             'alert_nbr' => ['nullable', 'boolean'],
         ]);
+
+        if (empty($data['client_id']) && empty($data['client_group_id'])) {
+            return back()->withErrors([
+                'client_id' => 'Debe seleccionar un cliente o un grupo de clientes.',
+            ])->withInput();
+        }
         
         // Verificar que el cliente pertenece a la organización del usuario
-        $client = \App\Models\Client::findOrFail($data['client_id']);
-        if (!$user->is_admin && $client->organization_id != $user->organization_id) {
-            abort(403, 'No puedes asignar una explotación a un cliente de otra organización');
-        }
+        $client = null;
         if (!empty($data['client_group_id'])) {
-            $group = \App\Models\ClientGroup::findOrFail($data['client_group_id']);
+            $group = \App\Models\ClientGroup::with('members')->findOrFail($data['client_group_id']);
             if (!$user->is_admin && $group->organization_id != $user->organization_id) {
                 abort(403, 'No puedes usar un grupo de otra organización');
             }
-            if ($group->organization_id !== $client->organization_id) {
-                abort(403, 'El grupo seleccionado no pertenece a la misma organización.');
+
+            if (!empty($data['client_id'])) {
+                $client = \App\Models\Client::findOrFail($data['client_id']);
+                if ($group->organization_id !== $client->organization_id) {
+                    abort(403, 'El grupo seleccionado no pertenece a la misma organización.');
+                }
+            } else {
+                if ($farm->client_id && $farm->client && $farm->client->organization_id === $group->organization_id) {
+                    $client = $farm->client;
+                    $data['client_id'] = $client->id;
+                } else {
+                    $member = $group->members->sortByDesc('percentage')->first();
+                    if (!$member) {
+                        return back()->withErrors([
+                            'client_group_id' => 'El grupo seleccionado no tiene clientes.',
+                        ])->withInput();
+                    }
+                    $client = \App\Models\Client::findOrFail($member->client_id);
+                    $data['client_id'] = $client->id;
+                }
             }
+        } else {
+            $client = \App\Models\Client::findOrFail($data['client_id']);
+        }
+
+        if (!$user->is_admin && $client->organization_id != $user->organization_id) {
+            abort(403, 'No puedes asignar una explotación a un cliente de otra organización');
         }
         
         $data['status'] = $request->has('status') ? true : false;
