@@ -114,22 +114,14 @@ class FarmController extends Controller
             if (!$user->is_admin && $group->organization_id != $user->organization_id) {
                 abort(403, 'No puedes usar un grupo de otra organización');
             }
-
-            if (!empty($data['client_id'])) {
-                $client = \App\Models\Client::findOrFail($data['client_id']);
-                if ($group->organization_id !== $client->organization_id) {
-                    abort(403, 'El grupo seleccionado no pertenece a la misma organización.');
-                }
-            } else {
-                $member = $group->members->sortByDesc('percentage')->first();
-                if (!$member) {
-                    return back()->withErrors([
-                        'client_group_id' => 'El grupo seleccionado no tiene clientes.',
-                    ])->withInput();
-                }
-                $client = \App\Models\Client::findOrFail($member->client_id);
-                $data['client_id'] = $client->id;
+            $member = $group->members->sortByDesc('percentage')->first();
+            if (!$member) {
+                return back()->withErrors([
+                    'client_group_id' => 'El grupo seleccionado no tiene clientes.',
+                ])->withInput();
             }
+            $client = \App\Models\Client::findOrFail($member->client_id);
+            $data['client_id'] = $client->id;
         } else {
             $client = \App\Models\Client::findOrFail($data['client_id']);
         }
