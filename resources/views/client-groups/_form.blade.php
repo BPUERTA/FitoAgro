@@ -17,8 +17,8 @@
         <div class="mt-3 space-y-2" id="members-list">
             @php($oldMembers = old('members', isset($clientGroup) ? $clientGroup->members->map(fn($m) => ['client_id' => $m->client_id, 'percentage' => $m->percentage])->toArray() : []))
             @foreach($oldMembers as $index => $member)
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center member-row">
-                    <select name="members[{{ $index }}][client_id]" class="w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center member-row">
+                    <select name="members[{{ $index }}][client_id]" class="w-full md:col-span-7 rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
                         <option value="">Seleccionar cliente</option>
                         @foreach($clients as $client)
                             <option value="{{ $client->id }}" {{ (string) ($member['client_id'] ?? '') === (string) $client->id ? 'selected' : '' }}>
@@ -26,8 +26,13 @@
                             </option>
                         @endforeach
                     </select>
-                    <input type="number" step="0.01" min="0" max="100" name="members[{{ $index }}][percentage]" value="{{ $member['percentage'] ?? '' }}" placeholder="Porcentaje" class="w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
-                    <button type="button" class="remove-member rounded bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100">Quitar</button>
+                    <div class="flex items-center gap-2 md:col-span-3">
+                        <input type="number" step="0.01" min="0" max="100" name="members[{{ $index }}][percentage]" value="{{ $member['percentage'] ?? '' }}" placeholder="%" class="w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 text-right">
+                        <span class="text-sm text-gray-500">%</span>
+                    </div>
+                    <div class="md:col-span-2 md:flex md:justify-end">
+                        <button type="button" class="remove-member w-full md:w-auto rounded bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100">Quitar</button>
+                    </div>
                 </div>
             @endforeach
         </div>
@@ -49,15 +54,20 @@
 
         function buildRow(i) {
             const row = document.createElement('div');
-            row.className = 'grid grid-cols-1 md:grid-cols-3 gap-3 items-center member-row';
+            row.className = 'grid grid-cols-1 md:grid-cols-12 gap-3 items-center member-row';
             const template = document.getElementById('client-options-template');
             const optionsHtml = template ? template.innerHTML : '<option value=\"\">Seleccionar cliente</option>';
             row.innerHTML = `
-                <select name="members[${i}][client_id]" class="w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
+                <select name="members[${i}][client_id]" class="w-full md:col-span-7 rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
                     ${optionsHtml}
                 </select>
-                <input type="number" step="0.01" min="0" max="100" name="members[${i}][percentage]" placeholder="Porcentaje" class="w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
-                <button type="button" class="remove-member rounded bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100">Quitar</button>
+                <div class="flex items-center gap-2 md:col-span-3">
+                    <input type="number" step="0.01" min="0" max="100" name="members[${i}][percentage]" placeholder="%" class="w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 text-right">
+                    <span class="text-sm text-gray-500">%</span>
+                </div>
+                <div class="md:col-span-2 md:flex md:justify-end">
+                    <button type="button" class="remove-member w-full md:w-auto rounded bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100">Quitar</button>
+                </div>
             `;
             return row;
         }
