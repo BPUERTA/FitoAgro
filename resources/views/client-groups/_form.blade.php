@@ -31,6 +31,12 @@
                 </div>
             @endforeach
         </div>
+        <select id="client-options-template" class="hidden">
+            <option value="">Seleccionar cliente</option>
+            @foreach($clients as $client)
+                <option value="{{ $client->id }}">{{ $client->number }} - {{ $client->name }}</option>
+            @endforeach
+        </select>
         <p class="mt-2 text-xs text-gray-500">La suma de porcentajes debe ser 100%.</p>
     </div>
 </div>
@@ -44,12 +50,11 @@
         function buildRow(i) {
             const row = document.createElement('div');
             row.className = 'grid grid-cols-1 md:grid-cols-3 gap-3 items-center member-row';
+            const template = document.getElementById('client-options-template');
+            const optionsHtml = template ? template.innerHTML : '<option value=\"\">Seleccionar cliente</option>';
             row.innerHTML = `
                 <select name="members[${i}][client_id]" class="w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
-                    <option value="">Seleccionar cliente</option>
-                    ${Array.from(document.querySelectorAll('#members-list option'))
-                        .filter((opt, idx) => idx > 0)
-                        .map(opt => `<option value="${opt.value}">${opt.textContent}</option>`).join('')}
+                    ${optionsHtml}
                 </select>
                 <input type="number" step="0.01" min="0" max="100" name="members[${i}][percentage]" placeholder="Porcentaje" class="w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
                 <button type="button" class="remove-member rounded bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100">Quitar</button>
@@ -62,6 +67,11 @@
             list.appendChild(buildRow(index));
             index += 1;
         });
+
+        if (list && list.querySelectorAll('.member-row').length === 0) {
+            list.appendChild(buildRow(index));
+            index += 1;
+        }
 
         list?.addEventListener('click', (e) => {
             const btn = e.target.closest('.remove-member');
