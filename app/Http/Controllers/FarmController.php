@@ -29,15 +29,19 @@ class FarmController extends Controller
         // Si es super admin, mostrar todos los clientes; si no, solo los de su organización
         if ($user->is_admin) {
             $clients = \App\Models\Client::orderBy('name')->get();
+            $clientGroups = \App\Models\ClientGroup::orderBy('name')->get();
         } else {
             $clients = \App\Models\Client::where('organization_id', $user->organization_id)
+                ->orderBy('name')
+                ->get();
+            $clientGroups = \App\Models\ClientGroup::where('organization_id', $user->organization_id)
                 ->orderBy('name')
                 ->get();
         }
         
         $alertsAllowed = $this->alertsAllowed($user);
 
-        return view('farms.create', compact('clients', 'alertsAllowed'));
+        return view('farms.create', compact('clients', 'clientGroups', 'alertsAllowed'));
     }
 
     public function store(Request $request)
@@ -45,6 +49,7 @@ class FarmController extends Controller
         $user = auth()->user();
         $data = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
+            'client_group_id' => ['nullable', 'exists:client_groups,id'],
             'name' => ['required', 'string', 'max:255'],
             'has' => ['required', 'numeric', 'min:0'],
             'distancia_poblado' => ['nullable', 'numeric', 'min:0'],
@@ -58,6 +63,15 @@ class FarmController extends Controller
         $client = \App\Models\Client::findOrFail($data['client_id']);
         if (!$user->is_admin && $client->organization_id != $user->organization_id) {
             abort(403, 'No puedes crear una explotación para un cliente de otra organización');
+        }
+        if (!empty($data['client_group_id'])) {
+            $group = \App\Models\ClientGroup::findOrFail($data['client_group_id']);
+            if (!$user->is_admin && $group->organization_id != $user->organization_id) {
+                abort(403, 'No puedes usar un grupo de otra organización');
+            }
+            if ($group->organization_id !== $client->organization_id) {
+                abort(403, 'El grupo seleccionado no pertenece a la misma organización.');
+            }
         }
         
         $data['status'] = isset($data['status']) && ($data['status'] === '1' || $data['status'] === 1 || $data['status'] === true) ? 1 : 0;
@@ -82,7 +96,7 @@ class FarmController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $farm = \App\Models\Farm::with('lots')->findOrFail($id);
+        $farm = \App\Models\Farm::with(['lots', 'clientGroup.members.client'])->findOrFail($id);
         if (!$user->is_admin && $farm->organization_id != $user->organization_id) {
             abort(403);
         }
@@ -100,8 +114,12 @@ class FarmController extends Controller
         // Si es super admin, mostrar todos los clientes; si no, solo los de su organización
         if ($user->is_admin) {
             $clients = \App\Models\Client::orderBy('name')->get();
+            $clientGroups = \App\Models\ClientGroup::orderBy('name')->get();
         } else {
             $clients = \App\Models\Client::where('organization_id', $user->organization_id)
+                ->orderBy('name')
+                ->get();
+            $clientGroups = \App\Models\ClientGroup::where('organization_id', $user->organization_id)
                 ->orderBy('name')
                 ->get();
         }
@@ -125,7 +143,7 @@ class FarmController extends Controller
             })->values()->all();
         }
 
-        return view('farms.edit', compact('farm', 'clients', 'alertsAllowed', 'orgFarmsPayload'));
+        return view('farms.edit', compact('farm', 'clients', 'clientGroups', 'alertsAllowed', 'orgFarmsPayload'));
     }
 
     public function update(Request $request, $id)
@@ -138,6 +156,7 @@ class FarmController extends Controller
         
         $data = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
+            'client_group_id' => ['nullable', 'exists:client_groups,id'],
             'name' => ['required', 'string', 'max:255'],
             'has' => ['required', 'numeric', 'min:0'],
             'distancia_poblado' => ['nullable', 'numeric', 'min:0'],
@@ -154,6 +173,15 @@ class FarmController extends Controller
         $client = \App\Models\Client::findOrFail($data['client_id']);
         if (!$user->is_admin && $client->organization_id != $user->organization_id) {
             abort(403, 'No puedes asignar una explotación a un cliente de otra organización');
+        }
+        if (!empty($data['client_group_id'])) {
+            $group = \App\Models\ClientGroup::findOrFail($data['client_group_id']);
+            if (!$user->is_admin && $group->organization_id != $user->organization_id) {
+                abort(403, 'No puedes usar un grupo de otra organización');
+            }
+            if ($group->organization_id !== $client->organization_id) {
+                abort(403, 'El grupo seleccionado no pertenece a la misma organización.');
+            }
         }
         
         $data['status'] = $request->has('status') ? true : false;

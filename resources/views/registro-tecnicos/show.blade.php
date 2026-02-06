@@ -55,6 +55,17 @@
                     <p class="text-xs uppercase text-gray-400">Explotación</p>
                     <p class="text-sm text-gray-900">{{ $registroTecnico->farm?->name ?? 'Pendiente' }}</p>
                 </div>
+                @if($registroTecnico->farm?->clientGroup)
+                    <div>
+                        <p class="text-xs uppercase text-gray-400">Grupo de Clientes</p>
+                        <p class="text-sm text-gray-900">{{ $registroTecnico->farm->clientGroup->name }}</p>
+                        <div class="mt-1 text-xs text-gray-600 space-y-0.5">
+                            @foreach($registroTecnico->farm->clientGroup->members as $member)
+                                <div>{{ $member->client?->name ?? '—' }} ({{ number_format((float) $member->percentage, 2) }}%)</div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
                 <div>
                     <p class="text-xs uppercase text-gray-400">Lote</p>
                     <p class="text-sm text-gray-900">{{ $registroTecnico->lot?->name ?? '—' }}</p>

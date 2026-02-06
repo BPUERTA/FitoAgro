@@ -59,4 +59,9 @@ class Client extends Model
     {
         return $this->hasMany(RegistroTecnico::class);
     }
+
+    public function clientGroupMembers(): HasMany
+    {
+        return $this->hasMany(ClientGroupMember::class);
+    }
 }

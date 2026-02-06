@@ -11,6 +11,7 @@ class Farm extends Model
 
     protected $fillable = [
         'client_id',
+        'client_group_id',
         'organization_id',
         'name',
         'has',
@@ -36,6 +37,11 @@ class Farm extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function clientGroup()
+    {
+        return $this->belongsTo(ClientGroup::class);
     }
 
     public function organization()

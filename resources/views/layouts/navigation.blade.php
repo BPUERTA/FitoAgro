@@ -51,6 +51,11 @@
                                         {{ __('Explotaciones') }}
                                     </x-dropdown-link>
                                 @endif
+                                @if (Route::has('client-groups.index'))
+                                    <x-dropdown-link :href="route('client-groups.index')">
+                                        {{ __('Grupos de Clientes') }}
+                                    </x-dropdown-link>
+                                @endif
                             </x-slot>
                         </x-dropdown>
                     @endif
@@ -206,16 +211,21 @@
                 <div class="px-4 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
                     {{ __('Clientes') }}
                 </div>
-                @if (Route::has('clients.index'))
-                    <x-responsive-nav-link :href="route('clients.index')" :active="request()->routeIs('clients.*')" class="ps-6">
-                        {{ __('Clientes') }}
-                    </x-responsive-nav-link>
-                @endif
-                @if (Route::has('farms.index'))
-                    <x-responsive-nav-link :href="route('farms.index')" :active="request()->routeIs('farms.*')" class="ps-6">
-                        {{ __('Explotaciones') }}
-                    </x-responsive-nav-link>
-                @endif
+            @if (Route::has('clients.index'))
+                <x-responsive-nav-link :href="route('clients.index')" :active="request()->routeIs('clients.*')" class="ps-6">
+                    {{ __('Clientes') }}
+                </x-responsive-nav-link>
+            @endif
+            @if (Route::has('farms.index'))
+                <x-responsive-nav-link :href="route('farms.index')" :active="request()->routeIs('farms.*')" class="ps-6">
+                    {{ __('Explotaciones') }}
+                </x-responsive-nav-link>
+            @endif
+            @if (Route::has('client-groups.index'))
+                <x-responsive-nav-link :href="route('client-groups.index')" :active="request()->routeIs('client-groups.*')" class="ps-6">
+                    {{ __('Grupos de Clientes') }}
+                </x-responsive-nav-link>
+            @endif
             @endif
 
             @if (Route::has('professionals.index'))

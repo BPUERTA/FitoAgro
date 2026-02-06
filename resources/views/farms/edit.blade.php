@@ -37,6 +37,22 @@
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <div>
+                    <label for="client_group_id" class="block text-sm font-medium text-gray-700">Grupo de clientes</label>
+                    <select id="client_group_id" name="client_group_id" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500">
+                        <option value="">Sin grupo</option>
+                        @foreach($clientGroups as $group)
+                            <option value="{{ $group->id }}" {{ old('client_group_id', $farm->client_group_id) == $group->id ? 'selected' : '' }}>
+                                {{ $group->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Si asignás un grupo, los porcentajes se usarán para esta explotación.</p>
+                    @error('client_group_id')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
                 
                 <div>
                     <label for="name" class="block text-sm font-medium text-gray-700">Nombre de la Explotación <span class="text-red-500">*</span></label>

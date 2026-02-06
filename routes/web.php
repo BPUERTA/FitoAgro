@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ClientGroupController;
 use App\Http\Controllers\ClientUserController;
 use App\Http\Controllers\ContractorController;
 use App\Http\Controllers\DashboardController;
@@ -49,6 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dashboard');
 
     Route::resource('clients', ClientController::class);
+    Route::resource('client-groups', ClientGroupController::class);
     Route::resource('farms', FarmController::class);
     Route::post('farms/{farm}/lots', [FarmLotController::class, 'store'])->name('farms.lots.store');
     Route::put('farms/{farm}/lots/{lot}', [FarmLotController::class, 'update'])->name('farms.lots.update');

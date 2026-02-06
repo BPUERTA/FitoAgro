@@ -203,7 +203,7 @@ class RegistroTecnicoController extends Controller
 
         $this->authorize('view', $registroTecnico);
 
-        $registroTecnico->load(['client', 'farm', 'lot', 'workOrders']);
+        $registroTecnico->load(['client', 'farm.clientGroup.members.client', 'lot', 'workOrders']);
 
         $objectiveOptions = $this->objectiveLabels();
         $statusLabels = $this->statusLabels();
