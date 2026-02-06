@@ -8,6 +8,7 @@
         @csrf
         <div>
             <label for="client_selector" class="block text-sm font-medium text-gray-700">Cliente/Grupo</label>
+            <input type="text" id="client_selector_search" placeholder="Buscar cliente o grupo" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 text-sm" autocomplete="off">
             <select id="client_selector" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500" onchange="updateFarmName()">
                 <option value="">Seleccionar cliente o grupo</option>
                 <optgroup label="Clientes">
@@ -92,6 +93,7 @@ function updateFarmName() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const clientSelector = document.getElementById('client_selector');
+    const clientSearch = document.getElementById('client_selector_search');
     const clientIdInput = document.getElementById('client_id');
     const clientGroupInput = document.getElementById('client_group_id');
 
@@ -112,6 +114,14 @@ document.addEventListener('DOMContentLoaded', () => {
     clientSelector?.addEventListener('change', () => {
         applySelection();
         updateFarmName();
+    });
+    clientSearch?.addEventListener('input', () => {
+        const term = clientSearch.value.trim().toLowerCase();
+        Array.from(clientSelector.options).forEach((option) => {
+            if (!option.value) return;
+            const match = option.text.toLowerCase().includes(term);
+            option.hidden = term ? (!match && !option.selected) : false;
+        });
     });
     applySelection();
     updateFarmName();
